@@ -1,13 +1,13 @@
 [features]
 seeds = false
-[programs.localnet]
-solana_nft_demo = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+[programs.devnet]
+solana_nft_demo = "9px1erHuqV9jHAAncku7omwMHNR7YkvugHET2tJa6MF8"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/user/.config/solana/id.json"
 
 [scripts]

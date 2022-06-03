@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("9px1erHuqV9jHAAncku7omwMHNR7YkvugHET2tJa6MF8");
 
 #[program]
 pub mod solana_nft_demo {
