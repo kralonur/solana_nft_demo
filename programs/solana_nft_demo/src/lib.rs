@@ -20,7 +20,10 @@ pub mod solana_nft_demo {
         contract_data.treasury_bump = *ctx.bumps.get("treasury").unwrap();
         contract_data.authority = *ctx.accounts.authority.key;
         contract_data.fee = mint_fee;
-
+        emit!(Initialized {
+            data: 6,
+            label: "init".to_string(),
+        });
         Ok(())
     }
 
@@ -160,6 +163,7 @@ pub mod solana_nft_demo {
             master_edition_infos.as_slice(),
         )?;
         msg!("Master Edition Nft Minted !!!");
+        emit!(NFTMinted { nft_num: 1 });
         Ok(())
     }
 
@@ -318,4 +322,16 @@ pub enum CustomErrors {
     // 6001 0x1771
     #[msg("SOLs is not enough")]
     InsufficientFunds,
+}
+
+#[event]
+pub struct Initialized {
+    pub data: u64,
+    #[index]
+    pub label: String,
+}
+
+#[event]
+pub struct NFTMinted {
+    pub nft_num: u64,
 }

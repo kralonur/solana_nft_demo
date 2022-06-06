@@ -19,32 +19,31 @@ describe("solana_nft_demo", () => {
   const program = anchor.workspace.SolanaNftDemo as Program<SolanaNftDemo>;
 
   const contractDataPublic = (async (): Promise<anchor.web3.PublicKey> => {
-    return (
-      await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from("contractdata")],
-        program.programId
-      )
-    )[0];
+    return (await anchor.web3.PublicKey.findProgramAddress([Buffer.from("contractdata")], program.programId))[0];
   })();
 
   const treasuryDataPublic = (async (): Promise<anchor.web3.PublicKey> => {
-    return (
-      await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from("treasury")],
-        program.programId
-      )
-    )[0];
+    return (await anchor.web3.PublicKey.findProgramAddress([Buffer.from("treasury")], program.programId))[0];
   })();
 
+  const handleInitializedEvent = (ev: { data: Number; label: string }) =>
+    console.log(`${program.idl.events[0].name} ==>`, {
+      data: ev.data.toString(),
+      label: ev.label,
+    });
+
+  const handleNFTMintedEvent = (ev: { nftNum: Number }) =>
+    console.log(`${program.idl.events[1].name} ==>`, {
+      nftNum: ev.nftNum.toString(),
+    });
+
+  const initializedListener = program.addEventListener(program.idl.events[0].name, handleInitializedEvent);
+
+  const nftMintedListener = program.addEventListener(program.idl.events[1].name, handleNFTMintedEvent);
+
   it("Initialize", async () => {
-    console.log(
-      "contractDataPublic address ",
-      (await contractDataPublic).toBase58()
-    );
-    console.log(
-      "treasuryDataPublic address ",
-      (await treasuryDataPublic).toBase58()
-    );
+    console.log("contractDataPublic address ", (await contractDataPublic).toBase58());
+    console.log("treasuryDataPublic address ", (await treasuryDataPublic).toBase58());
 
     const tx = await program.methods
       .initialize(new anchor.BN(5555))
@@ -78,49 +77,28 @@ describe("solana_nft_demo", () => {
   it("Mint!", async () => {
     // Add your test here.
 
-    const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey(
-      "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
-    );
-    const lamports: number =
-      await program.provider.connection.getMinimumBalanceForRentExemption(
-        MINT_SIZE
-      );
-    const getMetadata = async (
-      mint: anchor.web3.PublicKey
-    ): Promise<anchor.web3.PublicKey> => {
+    const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+    const lamports: number = await program.provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+    const getMetadata = async (mint: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
       return (
         await anchor.web3.PublicKey.findProgramAddress(
-          [
-            Buffer.from("metadata"),
-            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-            mint.toBuffer(),
-          ],
-          TOKEN_METADATA_PROGRAM_ID
+          [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+          TOKEN_METADATA_PROGRAM_ID,
         )
       )[0];
     };
 
-    const getMasterEdition = async (
-      mint: anchor.web3.PublicKey
-    ): Promise<anchor.web3.PublicKey> => {
+    const getMasterEdition = async (mint: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
       return (
         await anchor.web3.PublicKey.findProgramAddress(
-          [
-            Buffer.from("metadata"),
-            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-            mint.toBuffer(),
-            Buffer.from("edition"),
-          ],
-          TOKEN_METADATA_PROGRAM_ID
+          [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer(), Buffer.from("edition")],
+          TOKEN_METADATA_PROGRAM_ID,
         )
       )[0];
     };
 
     const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
-    const NftTokenAccount = await getAssociatedTokenAddress(
-      mintKey.publicKey,
-      wallet.publicKey
-    );
+    const NftTokenAccount = await getAssociatedTokenAddress(mintKey.publicKey, wallet.publicKey);
     console.log("NFT Account: ", NftTokenAccount.toBase58());
 
     const mint_tx = new anchor.web3.Transaction().add(
@@ -131,24 +109,12 @@ describe("solana_nft_demo", () => {
         programId: TOKEN_PROGRAM_ID,
         lamports,
       }),
-      createInitializeMintInstruction(
-        mintKey.publicKey,
-        0,
-        wallet.publicKey,
-        wallet.publicKey
-      ),
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey,
-        NftTokenAccount,
-        wallet.publicKey,
-        mintKey.publicKey
-      )
+      createInitializeMintInstruction(mintKey.publicKey, 0, wallet.publicKey, wallet.publicKey),
+      createAssociatedTokenAccountInstruction(wallet.publicKey, NftTokenAccount, wallet.publicKey, mintKey.publicKey),
     );
 
     const res = await program.provider.sendAndConfirm(mint_tx, [mintKey]);
-    console.log(
-      await program.provider.connection.getParsedAccountInfo(mintKey.publicKey)
-    );
+    console.log(await program.provider.connection.getParsedAccountInfo(mintKey.publicKey));
 
     console.log("Account: ", res);
     console.log("Mint key: ", mintKey.publicKey.toString());
@@ -161,11 +127,7 @@ describe("solana_nft_demo", () => {
     console.log("MasterEdition: ", masterEdition.toBase58());
 
     const tx = await program.methods
-      .mintNft(
-        mintKey.publicKey,
-        "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA",
-        "Deez NUTZZZZ"
-      )
+      .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
       .accounts({
         mintAuthority: wallet.publicKey,
         mint: mintKey.publicKey,
@@ -212,5 +174,10 @@ describe("solana_nft_demo", () => {
     console.log("Your transaction signature", tx);
 
     console.log(await program.account.contractData.all());
+  });
+
+  it("Remove event listeners", async function () {
+    program.removeEventListener(initializedListener);
+    program.removeEventListener(nftMintedListener);
   });
 });
