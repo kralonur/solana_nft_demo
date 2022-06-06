@@ -8,6 +8,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token"; // IGNORE THESE ERRORS IF ANY
 import { SolanaNftDemo } from "../target/types/solana_nft_demo";
+import * as utils from "./utils";
 const { SystemProgram } = anchor.web3;
 
 describe("solana_nft_demo", () => {
@@ -18,13 +19,9 @@ describe("solana_nft_demo", () => {
 
   const program = anchor.workspace.SolanaNftDemo as Program<SolanaNftDemo>;
 
-  const contractDataPublic = (async (): Promise<anchor.web3.PublicKey> => {
-    return (await anchor.web3.PublicKey.findProgramAddress([Buffer.from("contractdata")], program.programId))[0];
-  })();
+  const contractDataPublic = utils.getPDAPublicKey([Buffer.from("contractdata")], program.programId);
 
-  const treasuryDataPublic = (async (): Promise<anchor.web3.PublicKey> => {
-    return (await anchor.web3.PublicKey.findProgramAddress([Buffer.from("treasury")], program.programId))[0];
-  })();
+  const treasuryDataPublic = utils.getPDAPublicKey([Buffer.from("treasury")], program.programId);
 
   const handleInitializedEvent = (ev: { data: Number; label: string }) =>
     console.log(`${program.idl.events[0].name} ==>`, {
@@ -80,21 +77,17 @@ describe("solana_nft_demo", () => {
     const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
     const lamports: number = await program.provider.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
     const getMetadata = async (mint: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
-      return (
-        await anchor.web3.PublicKey.findProgramAddress(
-          [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-          TOKEN_METADATA_PROGRAM_ID,
-        )
-      )[0];
+      return utils.getPDAPublicKey(
+        [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        TOKEN_METADATA_PROGRAM_ID,
+      );
     };
 
     const getMasterEdition = async (mint: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
-      return (
-        await anchor.web3.PublicKey.findProgramAddress(
-          [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer(), Buffer.from("edition")],
-          TOKEN_METADATA_PROGRAM_ID,
-        )
-      )[0];
+      return utils.getPDAPublicKey(
+        [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer(), Buffer.from("edition")],
+        TOKEN_METADATA_PROGRAM_ID,
+      );
     };
 
     const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
@@ -126,6 +119,8 @@ describe("solana_nft_demo", () => {
     console.log("Metadata address: ", metadataAddress.toBase58());
     console.log("MasterEdition: ", masterEdition.toBase58());
 
+    await sleep(3000);
+
     const tx = await program.methods
       .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
       .accounts({
@@ -144,6 +139,8 @@ describe("solana_nft_demo", () => {
       })
       .rpc();
     console.log("Your transaction signature", tx);
+
+    await sleep(3000);
   });
 
   it("Withdraw", async () => {
@@ -172,8 +169,6 @@ describe("solana_nft_demo", () => {
       .rpc();
 
     console.log("Your transaction signature", tx);
-
-    console.log(await program.account.contractData.all());
   });
 
   it("Remove event listeners", async function () {
@@ -181,3 +176,7 @@ describe("solana_nft_demo", () => {
     program.removeEventListener(nftMintedListener);
   });
 });
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
