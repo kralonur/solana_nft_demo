@@ -5,8 +5,9 @@ use anchor_lang::prelude::*;
 pub struct Initialize<'info> {
     #[account(init, seeds = [ContractData::SEED], bump, payer = authority, space = 8 + ContractData::SPACE)]
     contract_data: Account<'info, ContractData>,
-    #[account(init, seeds = [Treasury::SEED], bump, payer = authority, space = 8 + Treasury::SPACE)]
-    treasury: Account<'info, Treasury>,
+    /// CHECK:
+    #[account(init, seeds = [TREASURY_SEED], bump, payer = authority, space = 0)]
+    treasury: UncheckedAccount<'info>,
     #[account(mut)]
     authority: Signer<'info>,
     system_program: Program<'info, System>,

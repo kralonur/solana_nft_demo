@@ -5,8 +5,9 @@ use anchor_lang::prelude::*;
 pub struct Withdraw<'info> {
     #[account(mut, seeds = [ContractData::SEED], bump = contract_data.bump)]
     contract_data: Account<'info, ContractData>,
-    #[account(mut, seeds = [Treasury::SEED], bump = contract_data.treasury_bump)]
-    treasury: Account<'info, Treasury>,
+    /// CHECK:
+    #[account(mut, seeds = [TREASURY_SEED], bump = contract_data.treasury_bump)]
+    treasury: UncheckedAccount<'info>,
     #[account(mut, address = contract_data.authority)]
     authority: Signer<'info>,
     system_program: Program<'info, System>,
@@ -37,7 +38,7 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     let from = &ctx.accounts.treasury.to_account_info();
     let to = &ctx.accounts.authority.to_account_info();
 
-    let rent = Rent::get()?.minimum_balance(ctx.accounts.treasury.to_account_info().data_len());
+    let rent = Rent::get()?.minimum_balance(0);
     let available_amount_to_withdraw =
         **ctx.accounts.treasury.to_account_info().lamports.borrow() - rent;
 

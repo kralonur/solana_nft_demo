@@ -12,9 +12,4 @@ impl ContractData {
     pub const SEED: &'static [u8] = b"contractdata";
 }
 
-#[account]
-pub struct Treasury {}
-impl Treasury {
-    pub const SPACE: usize = 0;
-    pub const SEED: &'static [u8] = b"treasury";
-}
+pub const TREASURY_SEED: &'static [u8] = b"treasury";

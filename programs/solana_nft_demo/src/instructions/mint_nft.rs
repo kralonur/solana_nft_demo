@@ -23,7 +23,7 @@ pub struct MintNFT<'info> {
     token_metadata_program: UncheckedAccount<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut, address = contract_data.authority)]
-    payer: AccountInfo<'info>,
+    payer: UncheckedAccount<'info>,
     system_program: Program<'info, System>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     rent: AccountInfo<'info>,
@@ -32,8 +32,9 @@ pub struct MintNFT<'info> {
     master_edition: UncheckedAccount<'info>,
     #[account(seeds = [ContractData::SEED], bump = contract_data.bump)]
     contract_data: Account<'info, ContractData>,
-    #[account(mut, seeds = [Treasury::SEED], bump = contract_data.treasury_bump)]
-    treasury: Account<'info, Treasury>,
+    /// CHECK:
+    #[account(mut, seeds = [TREASURY_SEED], bump = contract_data.treasury_bump)]
+    treasury: UncheckedAccount<'info>,
 }
 
 pub fn mint_nft(
@@ -66,8 +67,8 @@ pub fn mint_nft(
     //     ],
     // )?;
     transfer_lamports(
-        &mut ctx.accounts.payer,
-        &mut ctx.accounts.treasury,
+        ctx.accounts.payer.to_account_info(),
+        ctx.accounts.treasury.to_account_info(),
         ctx.accounts.contract_data.fee,
     )?;
     // WORKING!!!
@@ -171,11 +172,7 @@ struct NFTMinted {
     nft_num: u64,
 }
 
-fn transfer_lamports<'a>(
-    from: &mut AccountInfo<'a>,
-    to: &mut Account<'a, Treasury>,
-    amount: u64,
-) -> Result<()> {
+fn transfer_lamports<'a>(from: AccountInfo<'a>, to: AccountInfo<'a>, amount: u64) -> Result<()> {
     let ix =
         anchor_lang::solana_program::system_instruction::transfer(&from.key(), &to.key(), amount);
     anchor_lang::solana_program::program::invoke(
