@@ -1,10 +1,4 @@
 # directories
-.yarn/*
-!.yarn/patches
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
 .vscode/*
 .anchor
 .DS_Store
