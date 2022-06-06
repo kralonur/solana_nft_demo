@@ -23,13 +23,13 @@ describe("solana_nft_demo", () => {
 
   const treasuryDataPublic = utils.getPDAPublicKey([Buffer.from("treasury")], program.programId);
 
-  const handleInitializedEvent = (ev: { data: Number; label: string }) =>
+  const handleInitializedEvent = (ev: utils.TInitialized) =>
     console.log(`${program.idl.events[0].name} ==>`, {
       data: ev.data.toString(),
       label: ev.label,
     });
 
-  const handleNFTMintedEvent = (ev: { nftNum: Number }) =>
+  const handleNFTMintedEvent = (ev: utils.TNFTMinted) =>
     console.log(`${program.idl.events[1].name} ==>`, {
       nftNum: ev.nftNum.toString(),
     });
@@ -119,8 +119,6 @@ describe("solana_nft_demo", () => {
     console.log("Metadata address: ", metadataAddress.toBase58());
     console.log("MasterEdition: ", masterEdition.toBase58());
 
-    await sleep(3000);
-
     const tx = await program.methods
       .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
       .accounts({
@@ -139,8 +137,6 @@ describe("solana_nft_demo", () => {
       })
       .rpc();
     console.log("Your transaction signature", tx);
-
-    await sleep(3000);
   });
 
   it("Withdraw", async () => {
@@ -178,5 +174,5 @@ describe("solana_nft_demo", () => {
 });
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
