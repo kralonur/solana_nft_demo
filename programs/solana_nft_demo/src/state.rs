@@ -12,4 +12,4 @@ impl ContractData {
     pub const SEED: &'static [u8] = b"contractdata";
 }
 
-pub const TREASURY_SEED: &'static [u8] = b"treasury";
+pub const TREASURY_SEED: &[u8] = b"treasury";
