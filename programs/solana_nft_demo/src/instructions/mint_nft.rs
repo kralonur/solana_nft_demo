@@ -25,8 +25,7 @@ pub struct MintNFT<'info> {
     #[account(mut, address = contract_data.authority)]
     payer: UncheckedAccount<'info>,
     system_program: Program<'info, System>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    rent: AccountInfo<'info>,
+    rent: Sysvar<'info, Rent>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     master_edition: UncheckedAccount<'info>,
