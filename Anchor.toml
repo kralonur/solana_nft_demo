@@ -1,7 +1,7 @@
 [features]
 seeds = false
 [programs.devnet]
-solana_nft_demo = "9px1erHuqV9jHAAncku7omwMHNR7YkvugHET2tJa6MF8"
+solana_nft_demo = "8WK7ZXXsqbx5j1We5pE6DYczTfE2vzu5qoQd2rb1sfUK"
 
 [registry]
 url = "https://anchor.projectserum.com"
