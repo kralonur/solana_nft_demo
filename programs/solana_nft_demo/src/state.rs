@@ -14,4 +14,14 @@ impl ContractData {
     pub const LIMIT: u16 = 3; // MAX mint limit
 }
 
+#[account]
+pub struct UserData {
+    pub total_minted: u16,
+    pub latest_mint_timestamp: u32,
+}
+impl UserData {
+    pub const SPACE: usize = 2 + 4;
+    pub const SEED: &'static [u8] = b"userdata";
+}
+
 pub const TREASURY_SEED: &[u8] = b"treasury";

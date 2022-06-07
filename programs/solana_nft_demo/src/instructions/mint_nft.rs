@@ -31,6 +31,8 @@ pub struct MintNFT<'info> {
     master_edition: UncheckedAccount<'info>,
     #[account(mut, seeds = [ContractData::SEED], bump = contract_data.bump)]
     contract_data: Account<'info, ContractData>,
+    #[account(init_if_needed,  seeds = [UserData::SEED, mint_authority.key().as_ref()], payer = payer, bump, space = 8 + UserData::SPACE)]
+    user_data: Account<'info, UserData>,
     /// CHECK:
     #[account(mut, seeds = [TREASURY_SEED], bump = contract_data.treasury_bump)]
     treasury: UncheckedAccount<'info>,
@@ -169,6 +171,10 @@ pub fn mint_nft(
 
     // increase total minted amount
     ctx.accounts.contract_data.total_minted = ctx.accounts.contract_data.total_minted + 1;
+    ctx.accounts.user_data.total_minted = ctx.accounts.user_data.total_minted + 1;
+
+    // save latest mint timestamp
+    ctx.accounts.user_data.latest_mint_timestamp = Clock::get().unwrap().unix_timestamp as u32;
     msg!("Master Edition Nft Minted !!!");
     emit!(NFTMinted {
         nft_num: ctx.accounts.contract_data.total_minted
