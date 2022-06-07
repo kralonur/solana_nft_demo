@@ -23,6 +23,10 @@ describe("solana_nft_demo", () => {
 
   const treasuryDataPublic = utils.getPDAPublicKey([Buffer.from("treasury")], program.programId);
 
+  const getUserData = async (mintAuthority: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
+    return utils.getPDAPublicKey([Buffer.from("userdata"), mintAuthority.toBuffer()], program.programId);
+  };
+
   const handleInitializedEvent = (ev: utils.TInitialized) =>
     console.log(`${program.idl.events[0].name} ==>`, {
       data: ev.data.toString(),
@@ -90,53 +94,58 @@ describe("solana_nft_demo", () => {
       );
     };
 
-    const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
-    const NftTokenAccount = await getAssociatedTokenAddress(mintKey.publicKey, wallet.publicKey);
-    console.log("NFT Account: ", NftTokenAccount.toBase58());
+    // mint x times
+    for (let i = 0; i < 3; i++) {
+      const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+      const NftTokenAccount = await getAssociatedTokenAddress(mintKey.publicKey, wallet.publicKey);
+      console.log("NFT Account: ", NftTokenAccount.toBase58());
 
-    const mint_tx = new anchor.web3.Transaction().add(
-      anchor.web3.SystemProgram.createAccount({
-        fromPubkey: wallet.publicKey,
-        newAccountPubkey: mintKey.publicKey,
-        space: MINT_SIZE,
-        programId: TOKEN_PROGRAM_ID,
-        lamports,
-      }),
-      createInitializeMintInstruction(mintKey.publicKey, 0, wallet.publicKey, wallet.publicKey),
-      createAssociatedTokenAccountInstruction(wallet.publicKey, NftTokenAccount, wallet.publicKey, mintKey.publicKey),
-    );
+      const mint_tx = new anchor.web3.Transaction().add(
+        anchor.web3.SystemProgram.createAccount({
+          fromPubkey: wallet.publicKey,
+          newAccountPubkey: mintKey.publicKey,
+          space: MINT_SIZE,
+          programId: TOKEN_PROGRAM_ID,
+          lamports,
+        }),
+        createInitializeMintInstruction(mintKey.publicKey, 0, wallet.publicKey, wallet.publicKey),
+        createAssociatedTokenAccountInstruction(wallet.publicKey, NftTokenAccount, wallet.publicKey, mintKey.publicKey),
+      );
 
-    const res = await program.provider.sendAndConfirm(mint_tx, [mintKey]);
-    console.log(await program.provider.connection.getParsedAccountInfo(mintKey.publicKey));
+      const res = await program.provider.sendAndConfirm(mint_tx, [mintKey]);
+      console.log(await program.provider.connection.getParsedAccountInfo(mintKey.publicKey));
 
-    console.log("Account: ", res);
-    console.log("Mint key: ", mintKey.publicKey.toString());
-    console.log("User: ", wallet.publicKey.toString());
+      console.log("Account: ", res);
+      console.log("Mint key: ", mintKey.publicKey.toString());
+      console.log("User: ", wallet.publicKey.toString());
 
-    const metadataAddress = await getMetadata(mintKey.publicKey);
-    const masterEdition = await getMasterEdition(mintKey.publicKey);
+      const metadataAddress = await getMetadata(mintKey.publicKey);
+      const masterEdition = await getMasterEdition(mintKey.publicKey);
 
-    console.log("Metadata address: ", metadataAddress.toBase58());
-    console.log("MasterEdition: ", masterEdition.toBase58());
+      console.log("Metadata address: ", metadataAddress.toBase58());
+      console.log("MasterEdition: ", masterEdition.toBase58());
 
-    const tx = await program.methods
-      .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
-      .accounts({
-        mintAuthority: wallet.publicKey,
-        mint: mintKey.publicKey,
-        tokenAccount: NftTokenAccount,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        metadata: metadataAddress,
-        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-        payer: wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-        masterEdition: masterEdition,
-        contractData: await contractDataPublic,
-        treasury: await treasuryDataPublic,
-      })
-      .rpc();
-    console.log("Your transaction signature", tx);
+      const tx = await program.methods
+        .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
+        .accounts({
+          mintAuthority: wallet.publicKey,
+          mint: mintKey.publicKey,
+          tokenAccount: NftTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          metadata: metadataAddress,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+          payer: wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          masterEdition: masterEdition,
+          contractData: await contractDataPublic,
+          userData: await getUserData(wallet.publicKey),
+          treasury: await treasuryDataPublic,
+        })
+        .rpc();
+      console.log("Your transaction signature", tx);
+      console.log(await program.account.userData.all());
+    }
   });
 
   it("Withdraw", async () => {
