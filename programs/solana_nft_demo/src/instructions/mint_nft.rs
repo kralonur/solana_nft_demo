@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::*, state::*};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
 use anchor_spl::token;
@@ -29,7 +29,7 @@ pub struct MintNFT<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     master_edition: UncheckedAccount<'info>,
-    #[account(seeds = [ContractData::SEED], bump = contract_data.bump)]
+    #[account(mut, seeds = [ContractData::SEED], bump = contract_data.bump)]
     contract_data: Account<'info, ContractData>,
     /// CHECK:
     #[account(mut, seeds = [TREASURY_SEED], bump = contract_data.treasury_bump)]
@@ -42,6 +42,11 @@ pub fn mint_nft(
     uri: String,
     title: String,
 ) -> Result<()> {
+    require!(
+        ctx.accounts.contract_data.total_minted < ContractData::LIMIT,
+        self::CustomErrors::MintLimit
+    );
+
     msg!("Initializing Mint Ticket");
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),
@@ -161,14 +166,19 @@ pub fn mint_nft(
         ),
         master_edition_infos.as_slice(),
     )?;
+
+    // increase total minted amount
+    ctx.accounts.contract_data.total_minted = ctx.accounts.contract_data.total_minted + 1;
     msg!("Master Edition Nft Minted !!!");
-    emit!(NFTMinted { nft_num: 1 });
+    emit!(NFTMinted {
+        nft_num: ctx.accounts.contract_data.total_minted
+    });
     Ok(())
 }
 
 #[event]
 struct NFTMinted {
-    nft_num: u64,
+    nft_num: u16,
 }
 
 fn transfer_lamports<'a>(from: AccountInfo<'a>, to: AccountInfo<'a>, amount: u64) -> Result<()> {

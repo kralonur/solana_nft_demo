@@ -16,7 +16,7 @@ pub mod solana_nft_demo {
     }
 
     pub fn finalize(_ctx: Context<Finalize>) -> Result<()> {
-        Ok(())
+        instructions::finalize(_ctx)
     }
 
     pub fn update_fee(ctx: Context<UpdateFee>, mint_fee: u64) -> Result<()> {
