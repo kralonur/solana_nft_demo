@@ -1,14 +1,23 @@
 [features]
 seeds = false
-[programs.devnet]
+[programs.localnet]
 solana_nft_demo = "8WK7ZXXsqbx5j1We5pE6DYczTfE2vzu5qoQd2rb1sfUK"
+
+[test]
+startup_wait = 30000
+[test.validator]
+url = "https://api.devnet.solana.com"
+[[test.validator.clone]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+[[test.validator.clone]]
+address = "cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
-wallet = "/home/user/.config/solana/id.json"
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
