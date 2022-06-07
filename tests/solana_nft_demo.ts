@@ -12,50 +12,48 @@ import * as utils from "./utils";
 const { SystemProgram } = anchor.web3;
 
 describe("solana_nft_demo", () => {
-  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const wallet = provider.wallet as Wallet;
 
   const program = anchor.workspace.SolanaNftDemo as Program<SolanaNftDemo>;
 
-  const contractDataPublic = utils.getPDAPublicKey([Buffer.from("contractdata")], program.programId);
-
-  const treasuryDataPublic = utils.getPDAPublicKey([Buffer.from("treasury")], program.programId);
-
   const getUserData = async (mintAuthority: anchor.web3.PublicKey): Promise<anchor.web3.PublicKey> => {
     return utils.getPDAPublicKey([Buffer.from("userdata"), mintAuthority.toBuffer()], program.programId);
   };
-
-  const handleInitializedEvent = (ev: utils.TInitialized) =>
-    console.log(`${program.idl.events[0].name} ==>`, {
-      data: ev.data.toString(),
-      label: ev.label,
-    });
-
-  const handleNFTMintedEvent = (ev: utils.TNFTMinted) =>
-    console.log(`${program.idl.events[1].name} ==>`, {
-      nftNum: ev.nftNum.toString(),
-    });
-
-  const initializedListener = program.addEventListener(program.idl.events[0].name, handleInitializedEvent);
-
-  const nftMintedListener = program.addEventListener(program.idl.events[1].name, handleNFTMintedEvent);
+  
+  let contractDataPublic: anchor.web3.PublicKey;
+  let treasuryDataPublic: anchor.web3.PublicKey;
+  
+  it("setups", async () => {
+    contractDataPublic = await utils.getPDAPublicKey([Buffer.from("contractdata")], program.programId);
+    treasuryDataPublic = await utils.getPDAPublicKey([Buffer.from("treasury")], program.programId);
+  });
 
   it("Initialize", async () => {
-    console.log("contractDataPublic address ", (await contractDataPublic).toBase58());
-    console.log("treasuryDataPublic address ", (await treasuryDataPublic).toBase58());
-
-    const tx = await program.methods
-      .initialize(new anchor.BN(5555))
-      .accounts({
-        contractData: await contractDataPublic,
-        treasury: await treasuryDataPublic,
-        authority: wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
-
+    console.log("contractDataPublic address ", contractDataPublic.toBase58());
+    console.log("treasuryDataPublic address ", treasuryDataPublic.toBase58());
+    
+    let tx: Promise<string>;
+    let listener: number;
+    const event: utils.TInitialized = await new Promise((resolve) => {
+      listener = program.addEventListener("Initialized", (event) => {
+        resolve(event);
+      });
+      tx = program.methods
+        .initialize(new anchor.BN(5555))
+        .accounts({
+          contractData: contractDataPublic,
+          treasury: treasuryDataPublic,
+          authority: wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+    });
+    await program.removeEventListener(listener);
+    
+    
+    console.log(`Initialized ==>`, event);
     console.log("Your transaction signature", tx);
 
     console.log(await program.account.contractData.all());
@@ -65,7 +63,7 @@ describe("solana_nft_demo", () => {
     const tx = await program.methods
       .updateFee(new anchor.BN(123456789))
       .accounts({
-        contractData: await contractDataPublic,
+        contractData: contractDataPublic,
         authority: wallet.publicKey,
       })
       .rpc();
@@ -125,24 +123,36 @@ describe("solana_nft_demo", () => {
       console.log("Metadata address: ", metadataAddress.toBase58());
       console.log("MasterEdition: ", masterEdition.toBase58());
 
-      const tx = await program.methods
-        .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
-        .accounts({
-          mintAuthority: wallet.publicKey,
-          mint: mintKey.publicKey,
-          tokenAccount: NftTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          metadata: metadataAddress,
-          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-          payer: wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          masterEdition: masterEdition,
-          contractData: await contractDataPublic,
-          userData: await getUserData(wallet.publicKey),
-          treasury: await treasuryDataPublic,
-        })
-        .rpc();
+      const userData = await getUserData(wallet.publicKey);
+      let tx: Promise<string>;
+      let listener: number;
+      const event: utils.TNFTMinted = await new Promise((resolve) => {
+        listener = program.addEventListener("NFTMinted", (event) => {
+          resolve(event);
+        });
+        tx = program.methods
+          .mintNft(mintKey.publicKey, "https://arweave.net/y5e5DJsiwH0s_ayfMwYk-SnrZtVZzHLQDSTZ5dNRUHA", "Deez NUTZZZZ")
+          .accounts({
+             mintAuthority: wallet.publicKey,
+             mint: mintKey.publicKey,
+             tokenAccount: NftTokenAccount,
+             tokenProgram: TOKEN_PROGRAM_ID,
+             metadata: metadataAddress,
+             tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+             payer: wallet.publicKey,
+             systemProgram: SystemProgram.programId,
+             rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+             masterEdition: masterEdition,
+             contractData: contractDataPublic,
+             userData,
+             treasury: treasuryDataPublic,
+          })
+          .rpc();
+      });
+      await program.removeEventListener(listener);
+      
+      console.log(`NFTMinted ==>`, event);
+      
       console.log("Your transaction signature", tx);
       console.log(await program.account.userData.all());
     }
@@ -152,8 +162,8 @@ describe("solana_nft_demo", () => {
     const tx = await program.methods
       .withdraw(new anchor.BN(12345678))
       .accounts({
-        contractData: await contractDataPublic,
-        treasury: await treasuryDataPublic,
+        contractData: contractDataPublic,
+        treasury: treasuryDataPublic,
         authority: wallet.publicKey,
         systemProgram: SystemProgram.programId,
       })
@@ -166,19 +176,14 @@ describe("solana_nft_demo", () => {
     const tx = await program.methods
       .finalize()
       .accounts({
-        contractData: await contractDataPublic,
-        treasury: await treasuryDataPublic,
+        contractData: contractDataPublic,
+        treasury: treasuryDataPublic,
         authority: wallet.publicKey,
         systemProgram: SystemProgram.programId,
       })
       .rpc();
 
     console.log("Your transaction signature", tx);
-  });
-
-  it("Remove event listeners", async function () {
-    program.removeEventListener(initializedListener);
-    program.removeEventListener(nftMintedListener);
   });
 });
 
