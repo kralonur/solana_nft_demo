@@ -18,7 +18,7 @@ pub fn initialize(ctx: Context<Initialize>, mint_fee: u64) -> Result<()> {
 
     contract_data.bump = *ctx.bumps.get("contract_data").unwrap();
     contract_data.treasury_bump = *ctx.bumps.get("treasury").unwrap();
-    contract_data.authority = *ctx.accounts.authority.key;
+    contract_data.authority = ctx.accounts.authority.key();
     contract_data.fee = mint_fee;
     emit!(Initialized { fee: mint_fee });
     Ok(())

@@ -36,7 +36,7 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     **to.try_borrow_mut_lamports()? += amount;
 
     emit!(Withdrawn {
-        amount: amount,
+        amount,
         authority: ctx.accounts.authority.key()
     });
     Ok(())
