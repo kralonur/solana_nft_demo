@@ -55,41 +55,12 @@ pub fn mint_nft(
         to: ctx.accounts.token_account.to_account_info(),
         authority: ctx.accounts.payer.to_account_info(),
     };
-    // TEST PART !!!!!
-    // WORKING!!!
-    // let from = ctx.accounts.payer.key();
-    // let to = ctx.accounts.treasury.key();
-    // let amount_of_lamports: u64 = ctx.accounts.contract_data.fee;
-    // let ix = anchor_lang::solana_program::system_instruction::transfer(
-    //     &from,
-    //     &to,
-    //     amount_of_lamports,
-    // );
-    // anchor_lang::solana_program::program::invoke(
-    //     &ix,
-    //     &[
-    //         ctx.accounts.payer.to_account_info(),
-    //         ctx.accounts.treasury.to_account_info(),
-    //     ],
-    // )?;
+
     transfer_lamports(
         ctx.accounts.payer.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.contract_data.fee,
     )?;
-    // WORKING!!!
-    // // NOT_WORKING!!!
-    // let from = &ctx.accounts.mint_authority.to_account_info();
-    // let to = &ctx.accounts.treasury.to_account_info();
-    // let amount: u64 = ctx.accounts.contract_data.fee;
-    // if **from.try_borrow_lamports()? < amount {
-    //     panic!("no sol");
-    // }
-    // // Debit from_account and credit to_account
-    // **from.try_borrow_mut_lamports()? -= amount;
-    // **to.try_borrow_mut_lamports()? += amount;
-    // // NOT_WORKING!!!
-    // TEST PART !!!!!
     msg!("CPI Accounts Assigned");
     let cpi_program = ctx.accounts.token_program.to_account_info();
     msg!("CPI Program Assigned");

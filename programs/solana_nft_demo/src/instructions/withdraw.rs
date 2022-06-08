@@ -14,27 +14,7 @@ pub struct Withdraw<'info> {
 }
 
 pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    // NOT_WORKING!!!
-    // let from = ctx.accounts.treasury.key();
-    // let to = ctx.accounts.authority.key();
-
-    // let ix = anchor_lang::solana_program::system_instruction::transfer(&from, &to, amount);
-    // anchor_lang::solana_program::program::invoke_signed(
-    //     &ix,
-    //     &[
-    //         ctx.accounts.treasury.to_account_info(),
-    //         ctx.accounts.authority.to_account_info(),
-    //     ],
-    //     &[&[
-    //         &TREASURY_SEED[..],
-    //         &[ctx.accounts.contract_data.treasury_bump],
-    //     ]],
-    // )?;
-    // NOT_WORKING!!!
-
     // Warning: code is not safe !!!
-
-    // WORKING!!!
     let from = &ctx.accounts.treasury.to_account_info();
     let to = &ctx.accounts.authority.to_account_info();
 
@@ -54,7 +34,7 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Debit from_account and credit to_account
     **from.try_borrow_mut_lamports()? -= amount;
     **to.try_borrow_mut_lamports()? += amount;
-    // WORKING!!!
+
     emit!(Withdrawn {
         amount: amount,
         authority: ctx.accounts.authority.key()
