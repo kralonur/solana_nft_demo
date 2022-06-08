@@ -167,6 +167,7 @@ describe("solana_nft_demo", () => {
       .finalize()
       .accounts({
         contractData: await contractDataPublic,
+        userData: await getUserData(wallet.publicKey),
         treasury: await treasuryDataPublic,
         authority: wallet.publicKey,
         systemProgram: SystemProgram.programId,
@@ -181,7 +182,3 @@ describe("solana_nft_demo", () => {
     program.removeEventListener(nftMintedListener);
   });
 });
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}

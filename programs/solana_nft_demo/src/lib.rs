@@ -5,7 +5,7 @@ pub mod error;
 pub mod instructions;
 pub mod state;
 
-declare_id!("8WK7ZXXsqbx5j1We5pE6DYczTfE2vzu5qoQd2rb1sfUK");
+declare_id!("88pY5YqPPrQtBz8s154c5wENE6hRE6KVY9AJtobmeSJ8");
 
 #[program]
 pub mod solana_nft_demo {

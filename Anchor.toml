@@ -1,7 +1,7 @@
 [features]
 seeds = false
 [programs.localnet]
-solana_nft_demo = "8WK7ZXXsqbx5j1We5pE6DYczTfE2vzu5qoQd2rb1sfUK"
+solana_nft_demo = "88pY5YqPPrQtBz8s154c5wENE6hRE6KVY9AJtobmeSJ8"
 
 [test]
 startup_wait = 30000

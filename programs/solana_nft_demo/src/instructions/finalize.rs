@@ -5,6 +5,8 @@ use anchor_lang::prelude::*;
 pub struct Finalize<'info> {
     #[account(mut, seeds = [ContractData::SEED], bump = contract_data.bump, close = authority)]
     contract_data: Account<'info, ContractData>,
+    #[account(mut, seeds = [UserData::SEED, authority.key().as_ref()], bump, close = authority)]
+    user_data: Account<'info, UserData>,
     /// CHECK:
     #[account(mut, seeds = [TREASURY_SEED], bump = contract_data.treasury_bump)]
     treasury: UncheckedAccount<'info>,
