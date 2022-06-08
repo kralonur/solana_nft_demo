@@ -44,41 +44,39 @@ pub fn mint_nft(
     uri: String,
     title: String,
 ) -> Result<()> {
+    // mint limit check
     require!(
         ctx.accounts.contract_data.total_minted < ContractData::LIMIT,
         self::CustomErrors::MintLimit
     );
 
-    msg!("Initializing Mint Ticket");
-    let cpi_accounts = MintTo {
-        mint: ctx.accounts.mint.to_account_info(),
-        to: ctx.accounts.token_account.to_account_info(),
-        authority: ctx.accounts.payer.to_account_info(),
-    };
-
+    msg!("Transferring mint funds to treasury");
     transfer_lamports(
         ctx.accounts.payer.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.contract_data.fee,
     )?;
-    msg!("CPI Accounts Assigned");
+
+    msg!("Initializing mint");
+    // CPI program
     let cpi_program = ctx.accounts.token_program.to_account_info();
-    msg!("CPI Program Assigned");
+    // CPI accounts
+    let token_mint = ctx.accounts.mint.to_account_info();
+    let token_mint_id = token_mint.key;
+    let cpi_accounts = MintTo {
+        mint: token_mint,
+        to: ctx.accounts.token_account.to_account_info(),
+        authority: ctx.accounts.payer.to_account_info(),
+    };
+    // CPI context assigned
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-    msg!("CPI Context Assigned");
-    token::mint_to(cpi_ctx, 1)?;
-    msg!("Token Minted !!!");
-    let account_info = vec![
-        ctx.accounts.metadata.to_account_info(),
-        ctx.accounts.mint.to_account_info(),
-        ctx.accounts.mint_authority.to_account_info(),
-        ctx.accounts.payer.to_account_info(),
-        ctx.accounts.token_metadata_program.to_account_info(),
-        ctx.accounts.token_program.to_account_info(),
-        ctx.accounts.system_program.to_account_info(),
-        ctx.accounts.rent.to_account_info(),
-    ];
-    msg!("Account Info Assigned");
+    let mint_amount = 1;
+    token::mint_to(cpi_ctx, mint_amount)?;
+    msg!("Minted token id: {}", token_mint_id);
+
+    // token symbol
+    let symbol = std::string::ToString::to_string("NUTS");
+    // creator
     let creator = vec![
         mpl_token_metadata::state::Creator {
             address: creator_key,
@@ -91,8 +89,17 @@ pub fn mint_nft(
             share: 0,
         },
     ];
-    msg!("Creator Assigned");
-    let symbol = std::string::ToString::to_string("symb");
+    // account info
+    let account_info = vec![
+        ctx.accounts.metadata.to_account_info(),
+        ctx.accounts.mint.to_account_info(),
+        ctx.accounts.mint_authority.to_account_info(),
+        ctx.accounts.payer.to_account_info(),
+        ctx.accounts.token_metadata_program.to_account_info(),
+        ctx.accounts.token_program.to_account_info(),
+        ctx.accounts.system_program.to_account_info(),
+        ctx.accounts.rent.to_account_info(),
+    ];
     invoke(
         &create_metadata_accounts_v2(
             ctx.accounts.token_metadata_program.key(),
@@ -113,7 +120,9 @@ pub fn mint_nft(
         ),
         account_info.as_slice(),
     )?;
-    msg!("Metadata Account Created !!!");
+    msg!("Metadata account created !!!");
+
+    // master edition info
     let master_edition_infos = vec![
         ctx.accounts.master_edition.to_account_info(),
         ctx.accounts.mint.to_account_info(),
@@ -125,7 +134,6 @@ pub fn mint_nft(
         ctx.accounts.system_program.to_account_info(),
         ctx.accounts.rent.to_account_info(),
     ];
-    msg!("Master Edition Account Infos Assigned");
     invoke(
         &create_master_edition_v3(
             ctx.accounts.token_metadata_program.key(),
@@ -139,6 +147,7 @@ pub fn mint_nft(
         ),
         master_edition_infos.as_slice(),
     )?;
+    msg!("Master edition nft minted !!!");
 
     // increase total minted amount
     ctx.accounts.contract_data.total_minted = ctx.accounts.contract_data.total_minted + 1;
@@ -146,7 +155,6 @@ pub fn mint_nft(
 
     // save latest mint timestamp
     ctx.accounts.user_data.latest_mint_timestamp = Clock::get().unwrap().unix_timestamp as u32;
-    msg!("Master Edition Nft Minted !!!");
     emit!(NFTMinted {
         nft_num: ctx.accounts.contract_data.total_minted
     });
