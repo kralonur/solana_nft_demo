@@ -1,6 +1,7 @@
 use crate::{error::*, state::*};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
+use anchor_lang::solana_program::system_instruction;
 use anchor_spl::token;
 use anchor_spl::token::{MintTo, Token};
 use mpl_token_metadata::instruction::{create_master_edition_v3, create_metadata_accounts_v2};
@@ -150,8 +151,8 @@ pub fn mint_nft(
     msg!("Master edition nft minted !!!");
 
     // increase total minted amount
-    ctx.accounts.contract_data.total_minted = ctx.accounts.contract_data.total_minted + 1;
-    ctx.accounts.user_data.total_minted = ctx.accounts.user_data.total_minted + 1;
+    ctx.accounts.contract_data.total_minted += 1;
+    ctx.accounts.user_data.total_minted += 1;
 
     // save latest mint timestamp
     ctx.accounts.user_data.latest_mint_timestamp = Clock::get().unwrap().unix_timestamp as u32;
@@ -167,12 +168,8 @@ struct NFTMinted {
 }
 
 fn transfer_lamports<'a>(from: AccountInfo<'a>, to: AccountInfo<'a>, amount: u64) -> Result<()> {
-    let ix =
-        anchor_lang::solana_program::system_instruction::transfer(&from.key(), &to.key(), amount);
-    anchor_lang::solana_program::program::invoke(
-        &ix,
-        &[from.to_account_info(), to.to_account_info()],
-    )?;
+    let ix = system_instruction::transfer(&from.key(), &to.key(), amount);
+    invoke(&ix, &[from, to])?;
 
     Ok(())
 }
