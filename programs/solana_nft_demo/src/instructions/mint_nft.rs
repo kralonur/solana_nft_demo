@@ -8,7 +8,7 @@ use mpl_token_metadata::instruction::{create_master_edition_v3, create_metadata_
 
 #[derive(Accounts)]
 pub struct MintNFT<'info> {
-    #[account(mut, address = contract_data.authority)]
+    #[account(mut)]
     mint_authority: Signer<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
@@ -22,9 +22,6 @@ pub struct MintNFT<'info> {
     token_account: UncheckedAccount<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     token_metadata_program: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut, address = contract_data.authority)]
-    payer: UncheckedAccount<'info>,
     system_program: Program<'info, System>,
     rent: Sysvar<'info, Rent>,
     /// CHECK: This is not dangerous because we don't read or write from this account
@@ -32,7 +29,7 @@ pub struct MintNFT<'info> {
     master_edition: UncheckedAccount<'info>,
     #[account(mut, seeds = [ContractData::SEED], bump = contract_data.bump)]
     contract_data: Account<'info, ContractData>,
-    #[account(init_if_needed,  seeds = [UserData::SEED, mint_authority.key().as_ref()], payer = payer, bump, space = 8 + UserData::SPACE)]
+    #[account(init_if_needed,  seeds = [UserData::SEED, mint_authority.key().as_ref()], payer = mint_authority, bump, space = 8 + UserData::SPACE)]
     user_data: Account<'info, UserData>,
     /// CHECK:
     #[account(mut, seeds = [TREASURY_SEED], bump = contract_data.treasury_bump)]
@@ -53,7 +50,7 @@ pub fn mint_nft(
 
     msg!("Transferring mint funds to treasury");
     transfer_lamports(
-        ctx.accounts.payer.to_account_info(),
+        ctx.accounts.mint_authority.to_account_info(),
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.contract_data.fee,
     )?;
@@ -67,7 +64,7 @@ pub fn mint_nft(
     let cpi_accounts = MintTo {
         mint: token_mint,
         to: ctx.accounts.token_account.to_account_info(),
-        authority: ctx.accounts.payer.to_account_info(),
+        authority: ctx.accounts.mint_authority.to_account_info(),
     };
     // CPI context assigned
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
@@ -95,7 +92,7 @@ pub fn mint_nft(
         ctx.accounts.metadata.to_account_info(),
         ctx.accounts.mint.to_account_info(),
         ctx.accounts.mint_authority.to_account_info(),
-        ctx.accounts.payer.to_account_info(),
+        ctx.accounts.mint_authority.to_account_info(),
         ctx.accounts.token_metadata_program.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
         ctx.accounts.system_program.to_account_info(),
@@ -107,8 +104,8 @@ pub fn mint_nft(
             ctx.accounts.metadata.key(),
             ctx.accounts.mint.key(),
             ctx.accounts.mint_authority.key(),
-            ctx.accounts.payer.key(),
-            ctx.accounts.payer.key(),
+            ctx.accounts.mint_authority.key(),
+            ctx.accounts.mint_authority.key(),
             title,
             symbol,
             uri,
@@ -128,7 +125,7 @@ pub fn mint_nft(
         ctx.accounts.master_edition.to_account_info(),
         ctx.accounts.mint.to_account_info(),
         ctx.accounts.mint_authority.to_account_info(),
-        ctx.accounts.payer.to_account_info(),
+        ctx.accounts.mint_authority.to_account_info(),
         ctx.accounts.metadata.to_account_info(),
         ctx.accounts.token_metadata_program.to_account_info(),
         ctx.accounts.token_program.to_account_info(),
@@ -140,10 +137,10 @@ pub fn mint_nft(
             ctx.accounts.token_metadata_program.key(),
             ctx.accounts.master_edition.key(),
             ctx.accounts.mint.key(),
-            ctx.accounts.payer.key(),
+            ctx.accounts.mint_authority.key(),
             ctx.accounts.mint_authority.key(),
             ctx.accounts.metadata.key(),
-            ctx.accounts.payer.key(),
+            ctx.accounts.mint_authority.key(),
             Some(0),
         ),
         master_edition_infos.as_slice(),

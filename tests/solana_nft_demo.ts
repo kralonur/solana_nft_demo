@@ -147,7 +147,6 @@ describe("solana_nft_demo", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           metadata: metadataAddress,
           tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-          payer: wallet.publicKey,
           systemProgram: SystemProgram.programId,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
           masterEdition: masterEdition,
