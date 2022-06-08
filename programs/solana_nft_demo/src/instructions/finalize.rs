@@ -22,5 +22,13 @@ pub fn finalize(ctx: Context<Finalize>) -> Result<()> {
     **to.try_borrow_mut_lamports()? += from.lamports();
     **from.try_borrow_mut_lamports()? = 0;
 
+    emit!(Finalized {
+        authority: ctx.accounts.authority.key()
+    });
     Ok(())
+}
+
+#[event]
+struct Finalized {
+    authority: Pubkey,
 }
