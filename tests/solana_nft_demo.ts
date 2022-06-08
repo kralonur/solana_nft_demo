@@ -5,7 +5,7 @@ import {
   createInitializeMintInstruction,
   getAssociatedTokenAddress,
   MINT_SIZE,
-  TOKEN_PROGRAM_ID
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token"; // IGNORE THESE ERRORS IF ANY
 import { SolanaNftDemo } from "../target/types/solana_nft_demo";
 import * as utils from "./utils";
@@ -29,7 +29,7 @@ describe("solana_nft_demo", () => {
 
   const handleFinalizedEvent = (ev: utils.TFinalized) =>
     console.log(`${program.idl.events[0].name} ==>`, {
-      authority: ev.authority,
+      authority: ev.authority.toString(),
     });
   const handleInitializedEvent = (ev: utils.TInitialized) =>
     console.log(`${program.idl.events[1].name} ==>`, {
@@ -46,7 +46,7 @@ describe("solana_nft_demo", () => {
   const handleWithdrawnEvent = (ev: utils.TWithdrawn) =>
     console.log(`${program.idl.events[4].name} ==>`, {
       amount: ev.amount.toString(),
-      authority: ev.authority,
+      authority: ev.authority.toString(),
     });
 
   const finalizedListener = program.addEventListener(program.idl.events[0].name, handleFinalizedEvent);

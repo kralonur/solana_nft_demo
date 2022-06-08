@@ -12,10 +12,10 @@ function getPDA(seeds: Array<Buffer | Uint8Array>, programId: anchor.web3.Public
 
 // Types
 
-type TFinalized = { authority: string };
+type TFinalized = { authority: anchor.web3.PublicKey };
 type TInitialized = { fee: Number };
 type TNFTMinted = { nftNum: Number };
 type TFeeUpdated = { fee: Number };
-type TWithdrawn = { amount: Number; authority: string };
+type TWithdrawn = { amount: Number; authority: anchor.web3.PublicKey };
 
 export { getPDAPublicKey, TFinalized, TInitialized, TNFTMinted, TFeeUpdated, TWithdrawn };
