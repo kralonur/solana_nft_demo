@@ -13,5 +13,11 @@
     "ts-mocha": "^8.0.0",
     "typescript": "^4.3.5"
   },
-  "packageManager": "yarn@3.2.1"
+  "packageManager": "yarn@3.2.1",
+  "scripts": {
+    "build": "anchor build",
+    "deploy": "anchor deploy",
+    "program:id": "yarn build && anchor keys list",
+    "test": "anchor test"
+  }
 }
