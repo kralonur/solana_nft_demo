@@ -5,7 +5,7 @@ import {
   createInitializeMintInstruction,
   getAssociatedTokenAddress,
   MINT_SIZE,
-  TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID
 } from "@solana/spl-token"; // IGNORE THESE ERRORS IF ANY
 import { SolanaNftDemo } from "../target/types/solana_nft_demo";
 import * as utils from "./utils";
@@ -27,20 +27,33 @@ describe("solana_nft_demo", () => {
     return utils.getPDAPublicKey([Buffer.from("userdata"), mintAuthority.toBuffer()], program.programId);
   };
 
-  const handleInitializedEvent = (ev: utils.TInitialized) =>
+  const handleFinalizedEvent = (ev: utils.TFinalized) =>
     console.log(`${program.idl.events[0].name} ==>`, {
-      data: ev.data.toString(),
-      label: ev.label,
+      authority: ev.authority,
     });
-
-  const handleNFTMintedEvent = (ev: utils.TNFTMinted) =>
+  const handleInitializedEvent = (ev: utils.TInitialized) =>
     console.log(`${program.idl.events[1].name} ==>`, {
+      fee: ev.fee.toString(),
+    });
+  const handleNFTMintedEvent = (ev: utils.TNFTMinted) =>
+    console.log(`${program.idl.events[2].name} ==>`, {
       nftNum: ev.nftNum.toString(),
     });
+  const handleFeeUpdatedEvent = (ev: utils.TFeeUpdated) =>
+    console.log(`${program.idl.events[3].name} ==>`, {
+      fee: ev.fee.toString(),
+    });
+  const handleWithdrawnEvent = (ev: utils.TWithdrawn) =>
+    console.log(`${program.idl.events[4].name} ==>`, {
+      amount: ev.amount.toString(),
+      authority: ev.authority,
+    });
 
-  const initializedListener = program.addEventListener(program.idl.events[0].name, handleInitializedEvent);
-
-  const nftMintedListener = program.addEventListener(program.idl.events[1].name, handleNFTMintedEvent);
+  const finalizedListener = program.addEventListener(program.idl.events[0].name, handleFinalizedEvent);
+  const initializedListener = program.addEventListener(program.idl.events[1].name, handleInitializedEvent);
+  const nftMintedListener = program.addEventListener(program.idl.events[2].name, handleNFTMintedEvent);
+  const feeUpdatedListener = program.addEventListener(program.idl.events[3].name, handleFeeUpdatedEvent);
+  const withdrawnListener = program.addEventListener(program.idl.events[4].name, handleWithdrawnEvent);
 
   it("Initialize", async () => {
     console.log("contractDataPublic address ", (await contractDataPublic).toBase58());
@@ -178,7 +191,10 @@ describe("solana_nft_demo", () => {
   });
 
   it("Remove event listeners", async function () {
+    program.removeEventListener(finalizedListener);
     program.removeEventListener(initializedListener);
     program.removeEventListener(nftMintedListener);
+    program.removeEventListener(feeUpdatedListener);
+    program.removeEventListener(withdrawnListener);
   });
 });
