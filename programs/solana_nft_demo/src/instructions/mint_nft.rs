@@ -54,11 +54,45 @@ pub fn mint_nft(
         ctx.accounts.treasury.to_account_info(),
         ctx.accounts.contract_data.fee,
     )?;
+    msg!(
+        "Transferred lamport amount: {}",
+        ctx.accounts.contract_data.fee
+    );
 
     msg!("Initializing mint");
-    // CPI program
+    let token_mint_id = mint_token(&ctx)?;
+    msg!("Minted token id: {}", token_mint_id);
+
+    msg!("Initializing metadata account");
+    create_metadata_accounts(&ctx, creator_key, uri, title)?;
+    msg!("Metadata account created !!!");
+
+    msg!("Initializing master edition nft");
+    create_master_edition(&ctx)?;
+    msg!("Master edition nft minted !!!");
+
+    // increase total minted amount
+    ctx.accounts.contract_data.total_minted += 1;
+    ctx.accounts.user_data.total_minted += 1;
+    // save latest mint timestamp
+    ctx.accounts.user_data.latest_mint_timestamp = Clock::get().unwrap().unix_timestamp as u32;
+
+    emit!(NFTMinted {
+        nft_num: ctx.accounts.contract_data.total_minted
+    });
+
+    Ok(())
+}
+
+fn transfer_lamports<'a>(from: AccountInfo<'a>, to: AccountInfo<'a>, amount: u64) -> Result<()> {
+    let ix = system_instruction::transfer(&from.key(), &to.key(), amount);
+    invoke(&ix, &[from, to])?;
+
+    Ok(())
+}
+
+fn mint_token<'a>(ctx: &'a Context<MintNFT>) -> Result<&'a Pubkey> {
     let cpi_program = ctx.accounts.token_program.to_account_info();
-    // CPI accounts
     let token_mint = ctx.accounts.mint.to_account_info();
     let token_mint_id = token_mint.key;
     let cpi_accounts = MintTo {
@@ -66,12 +100,19 @@ pub fn mint_nft(
         to: ctx.accounts.token_account.to_account_info(),
         authority: ctx.accounts.mint_authority.to_account_info(),
     };
-    // CPI context assigned
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
     let mint_amount = 1;
     token::mint_to(cpi_ctx, mint_amount)?;
-    msg!("Minted token id: {}", token_mint_id);
 
+    Ok(token_mint_id)
+}
+
+fn create_metadata_accounts<'a>(
+    ctx: &'a Context<MintNFT>,
+    creator_key: Pubkey,
+    uri: String,
+    title: String,
+) -> Result<()> {
     // token symbol
     let symbol = std::string::ToString::to_string("NUTS");
     // creator
@@ -118,8 +159,11 @@ pub fn mint_nft(
         ),
         account_info.as_slice(),
     )?;
-    msg!("Metadata account created !!!");
 
+    Ok(())
+}
+
+fn create_master_edition(ctx: &Context<MintNFT>) -> Result<()> {
     // master edition info
     let master_edition_infos = vec![
         ctx.accounts.master_edition.to_account_info(),
@@ -132,6 +176,7 @@ pub fn mint_nft(
         ctx.accounts.system_program.to_account_info(),
         ctx.accounts.rent.to_account_info(),
     ];
+
     invoke(
         &create_master_edition_v3(
             ctx.accounts.token_metadata_program.key(),
@@ -145,28 +190,11 @@ pub fn mint_nft(
         ),
         master_edition_infos.as_slice(),
     )?;
-    msg!("Master edition nft minted !!!");
 
-    // increase total minted amount
-    ctx.accounts.contract_data.total_minted += 1;
-    ctx.accounts.user_data.total_minted += 1;
-
-    // save latest mint timestamp
-    ctx.accounts.user_data.latest_mint_timestamp = Clock::get().unwrap().unix_timestamp as u32;
-    emit!(NFTMinted {
-        nft_num: ctx.accounts.contract_data.total_minted
-    });
     Ok(())
 }
 
 #[event]
 struct NFTMinted {
     nft_num: u16,
-}
-
-fn transfer_lamports<'a>(from: AccountInfo<'a>, to: AccountInfo<'a>, amount: u64) -> Result<()> {
-    let ix = system_instruction::transfer(&from.key(), &to.key(), amount);
-    invoke(&ix, &[from, to])?;
-
-    Ok(())
 }
