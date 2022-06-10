@@ -19,12 +19,19 @@ pub fn finalize(ctx: Context<Finalize>) -> Result<()> {
     let from = &ctx.accounts.treasury.to_account_info();
     let to = &ctx.accounts.authority.to_account_info();
 
-    **to.try_borrow_mut_lamports()? += from.lamports();
-    **from.try_borrow_mut_lamports()? = 0;
+    transfer_lamports(from, to, from.lamports())?;
 
     emit!(Finalized {
         authority: ctx.accounts.authority.key()
     });
+
+    Ok(())
+}
+
+fn transfer_lamports(from: &AccountInfo, to: &AccountInfo, amount: u64) -> Result<()> {
+    **from.try_borrow_mut_lamports()? -= amount;
+    **to.try_borrow_mut_lamports()? += amount;
+
     Ok(())
 }
 
