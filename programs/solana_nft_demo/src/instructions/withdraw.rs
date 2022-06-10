@@ -32,13 +32,20 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     );
 
     // Debit from_account and credit to_account
-    **from.try_borrow_mut_lamports()? -= amount;
-    **to.try_borrow_mut_lamports()? += amount;
+    transfer_lamports(from, to, amount)?;
 
     emit!(Withdrawn {
         amount,
         authority: ctx.accounts.authority.key()
     });
+
+    Ok(())
+}
+
+fn transfer_lamports(from: &AccountInfo, to: &AccountInfo, amount: u64) -> Result<()> {
+    **from.try_borrow_mut_lamports()? -= amount;
+    **to.try_borrow_mut_lamports()? += amount;
+
     Ok(())
 }
 
