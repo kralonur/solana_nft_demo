@@ -12,7 +12,9 @@ pub struct UpdateFee<'info> {
 pub fn update_fee(ctx: Context<UpdateFee>, mint_fee: u64) -> Result<()> {
     let contract_data = &mut ctx.accounts.contract_data;
     contract_data.fee = mint_fee;
+
     emit!(FeeUpdated { fee: mint_fee });
+    
     Ok(())
 }
 
